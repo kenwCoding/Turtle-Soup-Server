@@ -1,0 +1,9 @@
+{
+  "postgres": {
+    "connectionString": "POSTGRES_URI"
+  },
+  "cors": {
+    "__name": "CORS_OPTIONS",
+    "__format": "json"
+  }
+}
