@@ -8,7 +8,7 @@ import { ApiError } from './utils/erros';
 import passport from 'passport';
 import pg from 'pg';
 import cookieSession from 'cookie-session';
-import './passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,6 +17,7 @@ const corsConfig = config.get('cors') || {};
 const { name, version } = require('../package.json');
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(cookieParser());
 app.use(express.json());
@@ -27,6 +28,25 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user!);
+});
+
+passport.use(new GoogleStrategy({
+  clientID: (config.get('google')! as any).clientID!,
+  clientSecret: (config.get('google')! as any).clientSecret,
+  callbackURL: (config.get('passport')! as any).callbackUrl
+}, (accessToken, refreshToken, profile, done) => {
+  // This callback will be called after successful authentication
+  // For now, just return the profile
+  return done(null, profile);
+}));
+
 // Postgres
 const pool = new pg.Pool({
   connectionString: (config.get('postgres')! as any).connectionString,
