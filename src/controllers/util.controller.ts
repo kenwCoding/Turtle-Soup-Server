@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import config from "config";
 
 export const healthCheck = async (req: Request, res: Response) => {
   try {
@@ -7,6 +8,7 @@ export const healthCheck = async (req: Request, res: Response) => {
     const healthStatus = {
       status: 'ok',
       timestamp: new Date(),
+      environment: config
     };
 
     // Send the health status as a response

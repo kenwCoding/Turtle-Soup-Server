@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node dist/app.js",
     "dev": "tsx --env-file=.env src/app.ts",
-    "build": "yarn tsc",
+    "build": "yarn clean && yarn tsc",
+    "clean": "rm -rf dist",
     "migrate": "flyway -configFiles=flyway/dev.conf migrate",
     "migrate:stg": "flyway -configFiles=flyway/stg.conf migrate",
     "lint": "eslint --ignore-path .gitignore --ext .ts src/",

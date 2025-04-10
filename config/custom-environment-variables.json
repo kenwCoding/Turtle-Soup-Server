@@ -13,5 +13,8 @@
   },
   "client": {
     "url": "CLIENT_URL"
+  },
+  "passport": {
+    "callbackUrl": "PASSPORT_CALLBACK_URL"
   }
 }

@@ -24,8 +24,5 @@
   "port": 4001,
   "client": {
     "url": "http://localhost:5173"
-  },
-  "passport": {
-    "callbackUrl": "http://localhost:4001/auth/google/callback"
   }
 }
