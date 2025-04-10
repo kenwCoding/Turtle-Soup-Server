@@ -12,16 +12,21 @@ import './passport';
 
 // Load environment variables from .env file
 dotenv.config();
+const corsConfig = config.get('cors') || {};
 
 const { name, version } = require('../package.json');
 
 const app = express();
 
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors(corsConfig));
+
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
-
 // Postgres
 const pool = new pg.Pool({
   connectionString: (config.get('postgres')! as any).connectionString,
@@ -39,17 +44,12 @@ app.use(passport.session());
 
 // Prioritize environment variable PORT over config 
 const port = process.env.PORT || config.get('port') || 4000;
-const corsConfig = config.get('cors') || {};
 
 app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(cors(corsConfig));
 app.use(router);
 
 app.use((req, res, next) => {

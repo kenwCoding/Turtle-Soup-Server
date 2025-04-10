@@ -10,6 +10,8 @@ export async function GoogleCheckAuth (req: Request, res: Response, next: NextFu
       throw new ApiError(500, "Database not connected");
     }
     
+    console.log(req.user);
+    
     if (!req.user) {
       throw new ApiError(302, "User not logged in");
     }
