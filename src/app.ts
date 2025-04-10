@@ -1,3 +1,8 @@
+/**
+ * Main application setup and configuration file.
+ * Sets up Express server with middleware, authentication, database connections,
+ * error handling, and routes.
+ */
 import express from 'express';
 import cors from 'cors';
 import config from 'config';
@@ -9,21 +14,28 @@ import passport from 'passport';
 import pg from 'pg';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
-import connectPgSimple from 'connect-pg-simple';
+
 // Load environment variables from .env file
 dotenv.config();
 const corsConfig = config.get('cors') || {} as any;
 
 const { name, version } = require('../package.json');
 
+/**
+ * Express application instance
+ */
 const app = express();
 app.set('trust proxy', 1);
 
+// Apply middleware
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Set up CORS with credentials support
+/**
+ * CORS configuration
+ * Enables Cross-Origin Resource Sharing with credentials support
+ */
 const corsOptions = {
   ...corsConfig,
   credentials: true,
@@ -34,7 +46,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Postgres
+/**
+ * PostgreSQL database connection pool
+ */
 const pool = new pg.Pool({
   connectionString: (config.get('postgres')! as any).connectionString,
 });
@@ -46,35 +60,44 @@ pool.connect((err, client, release) => {
   release();
 });
 
-// const PgSessionStore = connectPgSimple(session);
+/**
+ * Session configuration
+ * Sets up user sessions with cookie settings for authentication
+ */
 app.use(
   session({
-    // store: new PgSessionStore({
-    //   pool: pool as any, // Use existing Postgres pool
-    //   tableName: 'session', // Default table name
-    // }),
-    secret: (config.get('session')! as any).secret, // Use a strong secret
-    name: 'session', // Make sure cookies use consistent names
+    secret: (config.get('session')! as any).secret,
+    name: 'session',
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 1 day
-      secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
+      secure: process.env.NODE_ENV !== 'dev',
       httpOnly: true,
-      sameSite: 'none', // Always use 'none' for cross-origin requests
+      sameSite: 'none',
       path: '/',
     },
     proxy: true,
   })
 );
 
+/**
+ * Passport authentication configuration
+ */
 app.use(passport.initialize());
 app.use(passport.session());
 
+/**
+ * User serialization for session storage
+ * Stores Google profile ID in the session
+ */
 passport.serializeUser((user, done) => {
   const userId = (user as any).id; // Google profile ID
-  console.log('Serialized user ID:', userId);
   done(null, userId);
 });
 
+/**
+ * User deserialization from session
+ * Retrieves user from database based on Google profile ID
+ */
 passport.deserializeUser(async (id, done) => {
   try {
     // Try to find the user in the database by googleId
@@ -112,30 +135,43 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+/**
+ * Google OAuth2.0 authentication strategy configuration
+ */
 passport.use(new GoogleStrategy({
   clientID: (config.get('google')! as any).clientID!,
   clientSecret: (config.get('google')! as any).clientSecret,
   callbackURL: (config.get('passport')! as any).callbackUrl
 }, (accessToken, refreshToken, profile, done) => {
-  // This callback will be called after successful authentication
-  // For now, just return the profile
   return done(null, profile);
 }));
 
-// Prioritize environment variable PORT over config 
 const port = process.env.PORT || config.get('port') || 4000;
 
+/**
+ * Make database pool available in request object
+ */
 app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
+/**
+ * Apply application routes
+ */
 app.use(router);
 
+/**
+ * 404 error handler for undefined routes
+ */
 app.use((req, res, next) => {
   next(new ApiError(404, 'Not found'));
 });
 
+/**
+ * Global error handler
+ * Handles all errors and returns appropriate response
+ */
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   const statusCode = err.statusCode || 500;
@@ -145,12 +181,19 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+/**
+ * Clean shutdown handler
+ * Gracefully closes database connections on application shutdown
+ */
 process.on('SIGINT', async () => {
   await pool.end(); // Close all connections in pool
   console.log('Pool has ended');
   process.exit(0);
 });
 
+/**
+ * Start the server and listen on configured port
+ */
 app.listen(port, ()  => {
   console.log(`==`);
   console.log(`🚀 Server is running on port ${port}`);

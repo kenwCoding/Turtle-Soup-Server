@@ -1,3 +1,17 @@
+/**
+ * User Service Module
+ * Provides functions for user data management in the database.
+ */
+
+/**
+ * Creates a new user or updates an existing user
+ * 
+ * @param req - Express request object containing database pool
+ * @param email - User's email address
+ * @param image_url - URL to user's profile image
+ * @param user_profile - Complete user profile data from OAuth provider
+ * @returns The created or updated user record from the database
+ */
 export async function createUser(req: any, email: string, image_url: string, user_profile: any) {
   const pg = req.pool;
 
@@ -25,6 +39,13 @@ export async function createUser(req: any, email: string, image_url: string, use
   return user.rows[0];
 }
 
+/**
+ * Retrieves a user by email address
+ * 
+ * @param req - Express request object containing database pool
+ * @param email - Email address to search for
+ * @returns User record if found, otherwise undefined
+ */
 export async function getUser(req: any, email: string) {
   const pg = req.pool;
   const user = await pg.query(`

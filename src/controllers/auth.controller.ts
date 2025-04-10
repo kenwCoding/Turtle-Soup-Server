@@ -1,9 +1,21 @@
+/**
+ * Authentication Controller Module
+ * Handles Google OAuth authentication flow and session management.
+ */
 import { NextFunction, Request, Response } from "express";
 import config from 'config';
 import passport from 'passport';
 import { ApiError } from "../utils/erros";
 import { createUser, getUser } from "../services/user.service";
 
+/**
+ * Checks if the current user is authenticated
+ * 
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ * @returns JSON response with user data if authenticated, or 401 if not
+ */
 export async function GoogleCheckAuth (req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.pool) {
@@ -38,6 +50,13 @@ export async function GoogleCheckAuth (req: Request, res: Response, next: NextFu
   }
 }
 
+/**
+ * Initiates Google OAuth2.0 login flow
+ * 
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ */
 export function GoogleLogin (req: Request, res: Response, next: NextFunction) {
   try {
     passport.authenticate('google', { 
@@ -50,6 +69,15 @@ export function GoogleLogin (req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Handles the callback from Google OAuth2.0
+ * Creates or updates user record in database upon successful authentication
+ * 
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ * @redirects to client application URL on success
+ */
 export function GoogleLoginCallback (req: Request, res: Response, next: NextFunction) {
   try {
     passport.authenticate('google', {
@@ -81,21 +109,6 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
         } else {
           throw new ApiError(500, "Create user failed");
         }
-        
-        // // Manually save the session to ensure it's stored before redirect
-        // req.session.save((saveErr) => {
-        //   if (saveErr) {
-        //     console.error('Error saving session:', saveErr);
-        //     return next(saveErr);
-        //   }
-        //   console.log('Session saved successfully');
-        //   console.log('User in callback:', req.user);
-        //   console.log('Session after save:', req.session);
-        //   console.log('Session ID after save:', req.sessionID);
-          
-        //   // Redirect after session is saved
-        //   res.redirect((config.get('client') as any).url);
-        // });
       } catch (error) {
         console.error('Error processing user data:', error);
         return next(error);
@@ -107,6 +120,14 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
   }
 }
 
+/**
+ * Logs out the current user by destroying their session
+ * 
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
+ * @redirects to client application URL after logout
+ */
 export async function Logout (req: Request, res: Response, next: NextFunction) {
   try {
     req.logout(function(err) {
