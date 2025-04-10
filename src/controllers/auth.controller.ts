@@ -76,7 +76,7 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
         console.log('User in callback:', req.user);
         
         // Redirect after session is saved
-        res.redirect(config.get('client.url'));
+        res.redirect((config.get('client') as any).url);
       });
     });
   } catch (error) {
@@ -90,7 +90,7 @@ export async function Logout (req: Request, res: Response, next: NextFunction) {
     req.logout(function(err) {
       if (err) { return next(err); }
     });
-    res.redirect(config.get('client.url'));
+    res.redirect((config.get('client') as any).url);
   } catch (error) {
     console.error('Error during logout:', error);
     next(error);

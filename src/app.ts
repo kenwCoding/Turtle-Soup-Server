@@ -27,20 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
   ...corsConfig,
   credentials: true,
-  origin: function(origin: any, callback: any) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = Array.isArray(corsConfig.origin) 
-      ? corsConfig.origin 
-      : [config.get('client.url')];
-      
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  }
+  origin: (config.get('client') as any).url
 };
 app.use(cors(corsOptions));
 
