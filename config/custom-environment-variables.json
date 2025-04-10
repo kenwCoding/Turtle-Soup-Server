@@ -16,5 +16,8 @@
   },
   "passport": {
     "callbackUrl": "PASSPORT_CALLBACK_URL"
+  },
+  "session": {
+    "secret": "SESSION_SECRET"
   }
 }

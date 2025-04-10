@@ -9,8 +9,7 @@
     "allowedHeaders": [
       "Content-Type",
       "Authorization",
-      "Accept",
-      "Access-Control-Allow-Credentials"
+      "Accept"
     ],
     "credentials": true,
     "origin": [

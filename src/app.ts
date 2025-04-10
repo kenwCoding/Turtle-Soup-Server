@@ -7,9 +7,9 @@ import dotenv from 'dotenv';
 import { ApiError } from './utils/erros';
 import passport from 'passport';
 import pg from 'pg';
-import cookieSession from 'cookie-session';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 // Load environment variables from .env file
 dotenv.config();
 const corsConfig = config.get('cors') || {};
@@ -24,36 +24,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsConfig));
 
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2'],
-  maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-  secure: process.env.NODE_ENV !== 'dev', // Secure cookies in production (requires HTTPS)
-  httpOnly: true, // Prevent client-side JS access
-  sameSite: process.env.NODE_ENV === 'dev' ? 'none' : 'lax', // Lax for production, None for localhost (if cross-origin)
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user!);
-});
-
-passport.use(new GoogleStrategy({
-  clientID: (config.get('google')! as any).clientID!,
-  clientSecret: (config.get('google')! as any).clientSecret,
-  callbackURL: (config.get('passport')! as any).callbackUrl
-}, (accessToken, refreshToken, profile, done) => {
-  // This callback will be called after successful authentication
-  // For now, just return the profile
-  return done(null, profile);
-}));
-
 // Postgres
 const pool = new pg.Pool({
   connectionString: (config.get('postgres')! as any).connectionString,
@@ -65,6 +35,52 @@ pool.connect((err, client, release) => {
   }
   release();
 });
+const PgSessionStore = connectPgSimple(session);
+
+app.use(
+  session({
+    store: new PgSessionStore({
+      pool: pool as any, // Use existing Postgres pool
+      tableName: 'session', // Default table name
+    }),
+    secret: (config.get('session')! as any).secret, // Use a strong secret
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'dev' ? 'none' : 'lax',
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+const users = new Map();
+passport.serializeUser((user, done) => {
+  const userId = (user as any).id; // Google profile ID
+  users.set(userId, user); // Store temporarily (replace with Postgres)
+  console.log('Serialized user ID:', userId);
+  done(null, userId);
+});
+
+passport.deserializeUser((id, done) => {
+  const user = users.get(id); // Fetch from store (replace with Postgres)
+  console.log('Deserialized user:', user);
+  done(null, user || null);
+});
+
+passport.use(new GoogleStrategy({
+  clientID: (config.get('google')! as any).clientID!,
+  clientSecret: (config.get('google')! as any).clientSecret,
+  callbackURL: (config.get('passport')! as any).callbackUrl
+}, (accessToken, refreshToken, profile, done) => {
+  // This callback will be called after successful authentication
+  // For now, just return the profile
+  return done(null, profile);
+}));
 
 // Prioritize environment variable PORT over config 
 const port = process.env.PORT || config.get('port') || 4000;
