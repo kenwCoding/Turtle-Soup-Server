@@ -27,9 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
   ...corsConfig,
   credentials: true,
-  origin: (corsConfig.origin && corsConfig.origin.length > 0) ? 
-    corsConfig.origin : 
-    (config.get('client') as any).url,
+  origin: (config.get('client') as any).url,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   exposedHeaders: ['Set-Cookie'],
