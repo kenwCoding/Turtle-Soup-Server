@@ -8,9 +8,24 @@
     "methods": "GET,PUT,POST,OPTIONS",
     "allowedHeaders": [
       "Content-Type",
-      "Authorization"
+      "Authorization",
+      "Accept",
+      "Access-Control-Allow-Credentials"
     ],
     "credentials": true,
-    "origin": "http://localhost:3000"
+    "origin": [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:3000",
+      "https://turtle-soup-client.vercel.app"
+    ]
+  },
+  "port": 4001,
+  "client": {
+    "url": "http://localhost:5173"
+  },
+  "passport": {
+    "callbackUrl": "http://localhost:4001/auth/google/callback"
   }
 }

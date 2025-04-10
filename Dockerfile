@@ -1,8 +1,15 @@
-FROM nginx:alpine
+FROM node:20-alpine
 
-COPY build /usr/share/nginx/html
+WORKDIR /app
 
-COPY default.conf /etc/nginx/conf.d/
+COPY package.json .
 
-# Alternate option is to sed the required line just like below:
-#RUN sed -i "11i \ \ \ \ \ \ \ \ "'try_files $uri.html $uri $uri/ /index.html;' /etc/nginx/conf.d/default.conf
+COPY package-lock.json .
+
+RUN yarn
+
+COPY . .
+
+EXPOSE 4001
+
+CMD ["yarn", "start"]

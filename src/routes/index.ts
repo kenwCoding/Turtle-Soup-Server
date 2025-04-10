@@ -1,8 +1,22 @@
-import express from 'express';
-import { healthcheckRouter } from './healthcheck';
+import express, { Router } from 'express';
+import { utilsRouter } from './utils.routes';
+import { authRouter } from './auth.routes';
 
-const routers = express.Router();
+const router = express.Router();
 
-routers.use('/healthcheck', healthcheckRouter);
+const defaultRoutes = [
+  {
+    path: '/utils',
+    route: utilsRouter,
+  },
+  {
+    path: '/auth',
+    route: authRouter,
+  },
+];
 
-export { routers };
+defaultRoutes.forEach((route) => {
+  router.use(route.path, route.route);
+});
+
+export { router };
