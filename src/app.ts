@@ -26,8 +26,15 @@ app.use(cors(corsConfig));
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['key1', 'key2']
+  keys: ['key1', 'key2'],
+  maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+  secure: process.env.NODE_ENV !== 'dev', // Secure cookies in production (requires HTTPS)
+  httpOnly: true, // Prevent client-side JS access
+  sameSite: process.env.NODE_ENV === 'dev' ? 'none' : 'lax', // Lax for production, None for localhost (if cross-origin)
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 passport.serializeUser((user, done) => {
   done(null, user);
@@ -58,9 +65,6 @@ pool.connect((err, client, release) => {
   }
   release();
 });
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Prioritize environment variable PORT over config 
 const port = process.env.PORT || config.get('port') || 4000;
