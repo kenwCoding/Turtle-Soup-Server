@@ -45,28 +45,28 @@ pool.connect((err, client, release) => {
   }
   release();
 });
-const PgSessionStore = connectPgSimple(session);
 
-app.use(
-  session({
-    store: new PgSessionStore({
-      pool: pool as any, // Use existing Postgres pool
-      tableName: 'session', // Default table name
-    }),
-    secret: (config.get('session')! as any).secret, // Use a strong secret
-    resave: false,
-    saveUninitialized: false,
-    name: 'session', // Make sure cookies use consistent names
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
-      httpOnly: true,
-      sameSite: 'none', // Always use 'none' for cross-origin requests
-      path: '/',
-    },
-    proxy: true,
-  })
-);
+// const PgSessionStore = connectPgSimple(session);
+// app.use(
+//   session({
+//     store: new PgSessionStore({
+//       pool: pool as any, // Use existing Postgres pool
+//       tableName: 'session', // Default table name
+//     }),
+//     secret: (config.get('session')! as any).secret, // Use a strong secret
+//     resave: false,
+//     saveUninitialized: false,
+//     name: 'session', // Make sure cookies use consistent names
+//     cookie: {
+//       maxAge: 24 * 60 * 60 * 1000, // 1 day
+//       secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
+//       httpOnly: true,
+//       sameSite: 'none', // Always use 'none' for cross-origin requests
+//       path: '/',
+//     },
+//     proxy: true,
+//   })
+// );
 
 app.use(passport.initialize());
 app.use(passport.session());
