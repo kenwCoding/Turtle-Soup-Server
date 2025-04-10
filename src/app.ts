@@ -59,6 +59,7 @@ app.use(
       httpOnly: true,
       sameSite: 'none',
     },
+    proxy: true,
   })
 );
 
@@ -88,7 +89,7 @@ passport.deserializeUser(async (id, done) => {
   try {
     // Try to find the user in the database by googleId
     const result = await pool.query(`
-      SELECT * FROM users WHERE user_profile->>'id' = $1
+      SELECT * FROM users WHERE user_profile->>'sub' = $1 OR user_profile->>'id' = $1
     `, [id]);
     
     const user = result.rows[0];
@@ -100,9 +101,20 @@ passport.deserializeUser(async (id, done) => {
     }
     
     console.log('Deserialized user from database');
+    
+    // Parse the user_profile if it's stored as string
+    let userProfile = user.user_profile;
+    if (typeof userProfile === 'string') {
+      try {
+        userProfile = JSON.parse(userProfile);
+      } catch (e) {
+        console.error('Error parsing user profile:', e);
+      }
+    }
+    
     done(null, {
       id: id,
-      _json: user.user_profile
+      _json: userProfile
     });
   } catch (error) {
     console.error('Error during user deserialization:', error);

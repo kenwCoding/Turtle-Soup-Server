@@ -60,24 +60,38 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
   try {
     passport.authenticate('google', {
       failureRedirect: "/logout"
-    })(req, res, (err: any) => {
+    })(req, res, async (err: any) => {
       if (err) {
         console.error('Error in Google callback authentication:', err);
         return next(err);
       }
       
-      // Manually save the session to ensure it's stored before redirect
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          console.error('Error saving session:', saveErr);
-          return next(saveErr);
+      try {
+        // Ensure user exists in database before redirecting
+        if (req.user && req.pool) {
+          const googleUser = req.user as any;
+          const { email, picture } = googleUser._json;
+          
+          // Create/update user in database
+          await createUser(req, email, picture, googleUser._json);
         }
-        console.log('Session saved successfully');
-        console.log('User in callback:', req.user);
         
-        // Redirect after session is saved
-        res.redirect((config.get('client') as any).url);
-      });
+        // Manually save the session to ensure it's stored before redirect
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Error saving session:', saveErr);
+            return next(saveErr);
+          }
+          console.log('Session saved successfully');
+          console.log('User in callback:', req.user);
+          
+          // Redirect after session is saved
+          res.redirect((config.get('client') as any).url);
+        });
+      } catch (error) {
+        console.error('Error processing user data:', error);
+        return next(error);
+      }
     });
   } catch (error) {
     console.error('Error during Google login callback:', error);

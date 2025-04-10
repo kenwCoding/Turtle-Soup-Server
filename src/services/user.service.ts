@@ -1,6 +1,14 @@
 export async function createUser(req: any, email: string, image_url: string, user_profile: any) {
   const pg = req.pool;
 
+  // Ensure user_profile is stored as JSON
+  const profileData = typeof user_profile === 'string' 
+    ? user_profile 
+    : JSON.stringify(user_profile);
+
+  // Create a unique ID for query lookup later
+  const userId = user_profile.sub || user_profile.id;
+  
   // Upsert user
   const user = await pg.query(`
     INSERT INTO
@@ -15,7 +23,7 @@ export async function createUser(req: any, email: string, image_url: string, use
       updated_at = now()
     RETURNING *,
      (xmax = 0) AS is_created
-  `, [email, image_url, JSON.stringify(user_profile)]);
+  `, [email, image_url, profileData]);
 
   return user.rows[0];
 }
