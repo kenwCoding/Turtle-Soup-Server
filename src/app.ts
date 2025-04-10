@@ -12,7 +12,7 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 // Load environment variables from .env file
 dotenv.config();
-const corsConfig = config.get('cors') || {};
+const corsConfig = config.get('cors') || {} as any;
 
 const { name, version } = require('../package.json');
 
@@ -22,7 +22,27 @@ app.set('trust proxy', 1);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors(corsConfig));
+
+// Set up CORS with credentials support
+const corsOptions = {
+  ...corsConfig,
+  credentials: true,
+  origin: function(origin: any, callback: any) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = Array.isArray(corsConfig.origin) 
+      ? corsConfig.origin 
+      : [config.get('client.url')];
+      
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  }
+};
+app.use(cors(corsOptions));
 
 // Postgres
 const pool = new pg.Pool({
@@ -50,7 +70,7 @@ app.use(
       maxAge: 24 * 60 * 60 * 1000, // 1 day
       secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'dev' ? 'none' : 'lax',
+      sameSite: 'none',
     },
   })
 );
@@ -58,18 +78,49 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const users = new Map();
+// Add debug middleware for session and auth
+if (process.env.NODE_ENV !== 'dev') {
+  console.log('Running in production mode');
+  app.use((req, res, next) => {
+    console.log('Session ID:', req.sessionID);
+    console.log('Session Data:', req.session);
+    console.log('Headers:', JSON.stringify(req.headers));
+    console.log('Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'function not available');
+    console.log('User:', req.user);
+    next();
+  });
+}
+
 passport.serializeUser((user, done) => {
   const userId = (user as any).id; // Google profile ID
-  users.set(userId, user); // Store temporarily (replace with Postgres)
   console.log('Serialized user ID:', userId);
   done(null, userId);
 });
 
-passport.deserializeUser((id, done) => {
-  const user = users.get(id); // Fetch from store (replace with Postgres)
-  console.log('Deserialized user:', user);
-  done(null, user || null);
+passport.deserializeUser(async (id, done) => {
+  try {
+    // Try to find the user in the database by googleId
+    const result = await pool.query(`
+      SELECT * FROM users WHERE user_profile->>'id' = $1
+    `, [id]);
+    
+    const user = result.rows[0];
+    
+    if (!user) {
+      console.log('User not found in database for ID:', id);
+      // If not found in the database, return null
+      return done(null, null);
+    }
+    
+    console.log('Deserialized user from database');
+    done(null, {
+      id: id,
+      _json: user.user_profile
+    });
+  } catch (error) {
+    console.error('Error during user deserialization:', error);
+    done(error, null);
+  }
 });
 
 passport.use(new GoogleStrategy({

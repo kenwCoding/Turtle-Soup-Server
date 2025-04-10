@@ -59,9 +59,26 @@ export function GoogleLogin (req: Request, res: Response, next: NextFunction) {
 export function GoogleLoginCallback (req: Request, res: Response, next: NextFunction) {
   try {
     passport.authenticate('google', {
-      successRedirect: config.get('client.url'),
       failureRedirect: "/logout"
-    })(req, res, next);
+    })(req, res, (err: any) => {
+      if (err) {
+        console.error('Error in Google callback authentication:', err);
+        return next(err);
+      }
+      
+      // Manually save the session to ensure it's stored before redirect
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Error saving session:', saveErr);
+          return next(saveErr);
+        }
+        console.log('Session saved successfully');
+        console.log('User in callback:', req.user);
+        
+        // Redirect after session is saved
+        res.redirect(config.get('client.url'));
+      });
+    });
   } catch (error) {
     console.error('Error during Google login callback:', error);
     next(error);

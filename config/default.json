@@ -13,8 +13,10 @@
     ],
     "credentials": true,
     "origin": [
-      "https://turtle-soup-client.vercel.app",
-      "https://turtle-soup-server.onrender.com"
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:3000"
     ]
   },
   "port": 4001,
