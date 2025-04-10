@@ -27,7 +27,12 @@ app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
   ...corsConfig,
   credentials: true,
-  origin: (config.get('client') as any).url
+  origin: (corsConfig.origin && corsConfig.origin.length > 0) ? 
+    corsConfig.origin : 
+    (config.get('client') as any).url,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
 };
 app.use(cors(corsOptions));
 
@@ -53,11 +58,13 @@ app.use(
     secret: (config.get('session')! as any).secret, // Use a strong secret
     resave: false,
     saveUninitialized: false,
+    name: 'session', // Make sure cookies use consistent names
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 1 day
       secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
       httpOnly: true,
-      sameSite: 'none',
+      sameSite: 'none', // Always use 'none' for cross-origin requests
+      path: '/',
     },
     proxy: true,
   })

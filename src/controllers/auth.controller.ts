@@ -10,10 +10,17 @@ export async function GoogleCheckAuth (req: Request, res: Response, next: NextFu
       throw new ApiError(500, "Database not connected");
     }
     
-    console.log(req.user);
+    console.log('Check-auth session ID:', req.sessionID);
+    console.log('Check-auth session:', req.session);
+    console.log('Check-auth user:', req.user);
+    console.log('Check-auth isAuthenticated:', req.isAuthenticated());
     
-    if (!req.user) {
-      throw new ApiError(302, "User not logged in");
+    if (!req.isAuthenticated() || !req.user) {
+      // Don't throw an error, just return a 401 response
+      return res.status(401).json({
+        success: false,
+        message: "User not logged in"
+      });
     }
 
     const googleUser = req.user as any;
@@ -74,6 +81,10 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
           
           // Create/update user in database
           await createUser(req, email, picture, googleUser._json);
+          
+          // Log more session debug info
+          console.log('Session before save:', req.session);
+          console.log('Session ID before save:', req.sessionID);
         }
         
         // Manually save the session to ensure it's stored before redirect
@@ -84,6 +95,8 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
           }
           console.log('Session saved successfully');
           console.log('User in callback:', req.user);
+          console.log('Session after save:', req.session);
+          console.log('Session ID after save:', req.sessionID);
           
           // Redirect after session is saved
           res.redirect((config.get('client') as any).url);
