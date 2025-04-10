@@ -47,42 +47,27 @@ pool.connect((err, client, release) => {
 });
 
 // const PgSessionStore = connectPgSimple(session);
-// app.use(
-//   session({
-//     store: new PgSessionStore({
-//       pool: pool as any, // Use existing Postgres pool
-//       tableName: 'session', // Default table name
-//     }),
-//     secret: (config.get('session')! as any).secret, // Use a strong secret
-//     resave: false,
-//     saveUninitialized: false,
-//     name: 'session', // Make sure cookies use consistent names
-//     cookie: {
-//       maxAge: 24 * 60 * 60 * 1000, // 1 day
-//       secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
-//       httpOnly: true,
-//       sameSite: 'none', // Always use 'none' for cross-origin requests
-//       path: '/',
-//     },
-//     proxy: true,
-//   })
-// );
+app.use(
+  session({
+    // store: new PgSessionStore({
+    //   pool: pool as any, // Use existing Postgres pool
+    //   tableName: 'session', // Default table name
+    // }),
+    secret: (config.get('session')! as any).secret, // Use a strong secret
+    name: 'session', // Make sure cookies use consistent names
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      secure: process.env.NODE_ENV !== 'dev', // HTTPS in production
+      httpOnly: true,
+      sameSite: 'none', // Always use 'none' for cross-origin requests
+      path: '/',
+    },
+    proxy: true,
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-// Add debug middleware for session and auth
-if (process.env.NODE_ENV !== 'dev') {
-  console.log('Running in production mode');
-  app.use((req, res, next) => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Session Data:', req.session);
-    console.log('Headers:', JSON.stringify(req.headers));
-    console.log('Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : 'function not available');
-    console.log('User:', req.user);
-    next();
-  });
-}
 
 passport.serializeUser((user, done) => {
   const userId = (user as any).id; // Google profile ID
