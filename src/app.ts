@@ -39,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
   ...corsConfig,
   credentials: true,
-  origin: (config.get('client') as any).url,
+  ...process.env.NODE_ENV !== 'dev' ? {origin: (config.get('client') as any).url} : {},
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   exposedHeaders: ['Set-Cookie'],
@@ -71,8 +71,8 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 1 day
       secure: process.env.NODE_ENV !== 'dev',
-      httpOnly: true,
-      sameSite: 'none',
+      httpOnly: process.env.NODE_ENV !== 'dev',
+      sameSite: process.env.NODE_ENV !== 'dev' ? 'none' : 'lax',
       path: '/',
     },
     proxy: true,

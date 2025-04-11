@@ -88,6 +88,8 @@ export function GoogleLoginCallback (req: Request, res: Response, next: NextFunc
         return next(err);
       }
       
+      console.log(req.user);
+      
       try {
         if (!req.pool) {
           throw new ApiError(500, "Database not connected");
